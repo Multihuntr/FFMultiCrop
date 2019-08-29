@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include "FFFRTypes.h"
+#include "FFFRStream.h"
 #include "FFMCExports.h"
 
 #include <future>
@@ -27,8 +27,9 @@ using DecodeType = Ffr::DecodeType;
 using EncodeType = Ffr::EncodeType;
 using EncoderOptions = Ffr::EncoderOptions;
 using Resolution = Ffr::Resolution;
+using Stream = Ffr::Stream;
 
-struct Crop
+struct CropPosition
 {
     uint32_t m_top;  /**< The offset in pixels from top of frame */
     uint32_t m_left; /**< The offset in pixels from left of frame */
@@ -54,11 +55,11 @@ public:
      * @param frame The frame index of the value to get.
      * @returns The crop, {UINT32_MAX, UINT32_MAX} if frame is invalid.
      */
-    FFMULTICROP_EXPORT Crop getCrop(uint64_t frame) const noexcept;
+    FFMULTICROP_EXPORT CropPosition getCrop(uint64_t frame) const noexcept;
 
-    std::vector<Crop> m_cropList;     /**< List of crops for each frame in video */
-    Resolution m_resolution = {0, 0}; /**< The resolution of the output video (affects crop size) */
-    std::string m_fileName;           /**< Filename of the output file */
+    std::vector<CropPosition> m_cropList; /**< List of crops for each frame in video */
+    Resolution m_resolution = {0, 0};     /**< The resolution of the output video (affects crop size) */
+    std::string m_fileName;               /**< Filename of the output file */
     std::vector<std::pair<uint64_t, uint64_t>> m_skipRegions; /**< A list of frame ranges to skip during encoding. The
                                                                list elements takes the form [startFrame, endFrame) */
 };
@@ -71,6 +72,16 @@ public:
  * @returns True if it succeeds, false if it fails.
  */
 FFMULTICROP_EXPORT bool cropAndEncode(const std::string& sourceFile, const std::vector<CropOptions>& cropList,
+    const EncoderOptions& options = EncoderOptions()) noexcept;
+
+/**
+ * Crops and encodes an input stream into 1 or more output videos synchronously.
+ * @param stream   Source video stream.
+ * @param cropList List of crop options for each desired output video.
+ * @param options  (Optional) Options to control the out encode.
+ * @returns True if it succeeds, false if it fails.
+ */
+FFMULTICROP_EXPORT bool cropAndEncode(const std::shared_ptr<Stream>& stream, const std::vector<CropOptions>& cropList,
     const EncoderOptions& options = EncoderOptions()) noexcept;
 
 class MultiCrop;
@@ -131,5 +142,15 @@ private:
  * @returns The server object if succeeded, nullptr otherwise.
  */
 FFMULTICROP_EXPORT std::shared_ptr<MultiCropServer> cropAndEncodeAsync(const std::string& sourceFile,
+    const std::vector<CropOptions>& cropList, const EncoderOptions& options = EncoderOptions()) noexcept;
+
+/**
+ * Crops and encodes an input stream into 1 or more output videos.
+ * @param stream   Source video stream.
+ * @param cropList List of crop options for each desired output video.
+ * @param options  (Optional) Options to control the out encode.
+ * @returns The server object if succeeded, nullptr otherwise.
+ */
+FFMULTICROP_EXPORT std::shared_ptr<MultiCropServer> cropAndEncodeAsync(const std::shared_ptr<Stream>& stream,
     const std::vector<CropOptions>& cropList, const EncoderOptions& options = EncoderOptions()) noexcept;
 } // namespace Fmc
